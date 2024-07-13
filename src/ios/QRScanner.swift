@@ -98,26 +98,16 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
 
     // utility method
     @objc func backgroundThread(delay: Double = 0.0, background: (() -> Void)? = nil, completion: (() -> Void)? = nil) {
-        if #available(iOS 8.0, *) {
-            DispatchQueue.global(qos: DispatchQoS.QoSClass.userInitiated).async {
-                if (background != nil) {
-                    background!()
-                }
-                DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + delay * Double(NSEC_PER_SEC)) {
-                    if(completion != nil){
-                        completion!()
-                    }
-                }
-            }
-        } else {
-            // Fallback for iOS < 8.0
-            if(background != nil){
-                background!()
-            }
-            if(completion != nil){
-                completion!()
-            }
-        }
+		DispatchQueue.global(qos: DispatchQoS.QoSClass.userInitiated).async {
+			if (background != nil) {
+				background!()
+			}
+			DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + delay * Double(NSEC_PER_SEC)) {
+				if(completion != nil){
+					completion!()
+				}
+			}
+		}
     }
 
     @objc func prepScanner(command: CDVInvokedUrlCommand) -> Bool{
@@ -467,6 +457,21 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
     }
 
     @objc func openSettings(_ command: CDVInvokedUrlCommand) {
+	
+	
+	    guard let settingsUrl = URL(string: UIApplication.openSettingsURLString) else {
+            return
+        }
+        if UIApplication.shared.canOpenURL(settingsUrl) {
+            UIApplication.shared.open(settingsUrl, completionHandler: { (success) in
+                self.getStatus(command)
+            })
+        } else {
+            self.sendErrorCode(command: command, error: QRScannerError.open_settings_unavailable)
+        }
+	
+		/*
+	
         if #available(iOS 10.0, *) {
             guard let settingsUrl = URL(string: UIApplicationOpenSettingsURLString) else {
             return
@@ -487,5 +492,7 @@ class QRScanner : CDVPlugin, AVCaptureMetadataOutputObjectsDelegate {
                 self.sendErrorCode(command: command, error: QRScannerError.open_settings_unavailable)
             }
         }
+		
+		*/
     }
 }
